@@ -1,5 +1,6 @@
 import lib.Math.LowLevelMath.vectorOperations as vec
 import lib.Exceptions.EngineExceptions.engineExceptions as engex
+import random
 
 
 class Ray:
@@ -12,3 +13,22 @@ class Ray:
         self.cs = cs
         self.initialpt = initialpt
         self.direction = direction
+
+
+class Identifier:
+    identifiers = set()
+
+    def __init__(self):
+        self.value = Identifier.__generate__()
+
+    def __generate__(self):
+        new_val = random.randrange(0, 2 ** 64)
+        while self.value in self.identifiers:
+            new_val = random.randrange(0, 2 ** 64)
+        self.identifiers.add(new_val)
+        return new_val
+
+    def get_value(self):
+        return self.value
+
+
