@@ -126,7 +126,7 @@ class Matrix:
 
     def determinant(self) -> float:
         if self.n != self.m:
-            raise mathex.MatrixOperationException("Determinant can only be computed for square matrices!")
+            return 0
         sign = 1
         mat_copy = Matrix(deepcopy(self.elements))
         for i in range(self.n):
