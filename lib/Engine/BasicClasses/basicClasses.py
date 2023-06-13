@@ -37,7 +37,7 @@ class Entity:
         if not isinstance(cs, vec.CoordinateSystem):
             raise engex.EntityException("Entity has to be initialized with a coordinate system!")
         self.cs = cs
-        self.identifier = Identifier().get_value()
+        self.identifier = Identifier()
         self.properties = dict()
 
     def set_property(self, prop: str, value):
@@ -48,6 +48,8 @@ class Entity:
     def get_property(self, prop: str):
         if not isinstance(prop, str):
             raise engex.EntityException("Property names must be strings!")
+        if prop not in self.properties.keys():
+            raise engex.EntityException("Property must exist to be deleted!")
         return self.properties[prop]
 
     def remove_property(self, prop: str):
@@ -58,14 +60,44 @@ class Entity:
         del self.properties[prop]
 
     def __getitem__(self, item):
-        if not isinstance(item, str):
-            raise engex.EntityException("Property names must be strings!")
-        if item not in self.properties.keys():
-            raise engex.EntityException("Property must exist to get its value!")
-        return self.properties[item]
+        return self.get_property(item)
 
     def __setitem__(self, key, value):
-        if not isinstance(key, str):
-            raise engex.EntityException("Property names must be strings!")
-        self.properties[key] = value
+        self.set_property(key, value)
+
+
+class EntitiesList:
+    def __init__(self, entities: list):
+        if not isinstance(entities, list) or not all(isinstance(e, Entity) for e in entities):
+            raise engex.EntitiesListException("You must give a list of entities!")
+        self.entities = entities
+
+    def append(self, entity: Entity):
+        if not isinstance(entity, Entity):
+            raise engex.EntitiesListException("Only Entity objects can be added!")
+        self.entities.append(entity)
+
+    def remove(self, entity: Entity):
+        if not isinstance(entity, Entity):
+            raise engex.EntitiesListException("Only Entity objects can be deleted!")
+        for (i, e) in enumerate(self.entities):
+            if e.identifier.get_value() == entity.identifier.get_value():
+                self.entities = self.entities[:i] + self.entities[i + 1:]
+                return
+        raise engex.EntitiesListException("Entity must exist to be deleted!")
+
+    def get(self, id: Identifier) -> Entity:
+        if not isinstance(id, Identifier):
+            raise engex.EntitiesListException("You can only get Entity objects by an Identifier object!")
+        for e in self.entities:
+            if e.identifier.get_value() == id.get_value():
+                return e
+        raise engex.EntitiesListException("Entity with given id must exist to be returned!")
+
+    def exec(self, func):
+        for (i, e) in self.entities:
+            self.entities[i] = func(self.entities[i])
+
+    def __getitem__(self, item):
+        self.get(item)
 
