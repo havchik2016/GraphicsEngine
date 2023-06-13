@@ -1,5 +1,6 @@
 import lib.Math.LowLevelMath.vectorOperations as vec
 import lib.Exceptions.EngineExceptions.engineExceptions as engex
+import lib.Math.LowLevelMath.matrixOperations as mtx
 import random
 
 
@@ -100,4 +101,98 @@ class EntitiesList:
 
     def __getitem__(self, item):
         self.get(item)
+
+
+class Game:
+    def __init__(self, cs: vec.CoordinateSystem, entities: EntitiesList):
+        if not isinstance(cs, vec.CoordinateSystem) or not isinstance(entities, EntitiesList):
+            raise engex.GameException("Illegal argument types!")
+        self.cs = cs
+        self.entities = entities
+
+    def run(self):
+        pass
+
+    def update(self):
+        pass
+
+    def exit(self):
+        pass
+
+    def get_entity_class(self):
+        class GameEntity(Entity):
+            def __init__(pself):
+                super().__init__(self.cs)
+        return GameEntity
+
+    def get_ray_class(self):
+        class GameRay(Ray):
+            def __init__(pself):
+                super().__init__(self.cs, vec.Point(1), vec.Vector(1))  # placeholders
+        return GameRay
+
+    def get_object(self):
+        class GameObject(self.get_entity_class()):
+            def __init__(pself, position: vec.Point, direction: vec.Vector):
+                if not isinstance(position, vec.Point) or not isinstance(direction, vec.Vector):
+                    raise engex.GameException("Illegal argument types!")
+                super().__init__()
+                pself["position"] = position
+                pself["direction"] = direction.normalize()
+
+            def move(pself, direction: vec.Vector):
+                if not isinstance(direction, vec.Vector):
+                    raise engex.GameException("Illegal argument types!")
+                pself["position"] += direction
+
+            def planar_rotate(pself, inds: (int, int), angle: float):
+                n = len(pself.cs.space.basis)
+                m = mtx.Matrix.get_rotation_matrix(inds, angle, n)
+                v = pself.cs.space.as_vector(pself["position"])
+                res = m * v
+                pself["position"] = vec.Vector(list(res[i][0] for i in range(n)))
+
+            def rotate_3d(pself, angles: (float, float, float)):
+                m = mtx.Matrix.get_teit_bryan_matrix(angles)
+                v = pself.cs.space.as_vector(pself["position"])
+                res = m * v
+                pself["position"] = vec.Vector(list(res[i][0] for i in range(3)))
+
+            def set_position(pself, position: vec.Point):
+                pself["position"] = position
+
+            def set_direction(pself, direction: vec.Vector):
+                pself["direction"] = direction
+
+        return GameObject
+
+    def get_camera(self):
+        class GameCamera(self.get_object()):
+            def __init__(pself, first = None, second = None, third = None, fourth = None):
+                super().__init__(pself["position"], pself["direction"])
+                if isinstance(first, float) and isinstance(second, float) and third is None:
+                    pself["fov"] = first
+                    pself["draw_distance"] = second
+                elif isinstance(first, float) and isinstance(second, float) and \
+                    isinstance(third, float) and fourth is None:
+                    pself["fov"] = first
+                    pself["vfov"] = second
+                    pself["draw_distance"] = third
+                elif isinstance(first, float) and isinstance(second, vec.Point) and \
+                    isinstance(third, float) and fourth is None:
+                    pself["fov"] = first
+                    pself["look_at"] = second
+                    pself["draw_distance"] = third
+                elif isinstance(first, float) and isinstance(second, float) and \
+                    isinstance(third, vec.Point) and isinstance(fourth, float):
+                    pself["fov"] = first
+                    pself["vfov"] = second
+                    pself["look_at"] = third
+                    pself["draw_distance"] = fourth
+                else:
+                    raise engex.GameException("Illegal argument types!")
+
+        return GameCamera
+
+
 
